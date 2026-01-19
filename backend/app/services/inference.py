@@ -52,17 +52,14 @@ async def infer_fields(group: AdGroup) -> AdGroup:
     
     # Infer each field
     product, product_conf = _infer_product(combined_text)
-    angle, angle_conf = _infer_angle(combined_text)
     offer, offer_conf = _infer_offer(combined_text)
     
     # Update group
     group.product = product
-    group.angle = angle
     group.offer = offer
     group.confidence = ConfidenceScores(
         group=group.confidence.group,
         product=product_conf,
-        angle=angle_conf,
         offer=offer_conf,
     )
     

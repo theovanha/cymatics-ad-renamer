@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { ANGLE_OPTIONS } from '../types';
 
 interface BulkToolbarProps {
   selectedCount: number;
@@ -88,7 +87,7 @@ export default function BulkToolbar({
                 <option value="product">Product</option>
                 <option value="angle">Angle</option>
                 <option value="creator">Creator</option>
-                <option value="offer">Offer</option>
+                <option value="offer">Colab</option>
               </select>
             </div>
             <div className="panel-field">
@@ -124,20 +123,13 @@ export default function BulkToolbar({
               <label>Field</label>
               <select value={applyField} onChange={e => setApplyField(e.target.value)}>
                 <option value="product">Product</option>
-                <option value="angle">Angle</option>
                 <option value="creator">Creator</option>
-                <option value="offer">Offer</option>
+                <option value="offer">Colab</option>
               </select>
             </div>
             <div className="panel-field">
               <label>Value</label>
-              {applyField === 'angle' ? (
-                <select value={applyValue} onChange={e => setApplyValue(e.target.value)}>
-                  {ANGLE_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              ) : applyField === 'offer' ? (
+              {applyField === 'offer' ? (
                 <select value={applyValue} onChange={e => setApplyValue(e.target.value)}>
                   <option value="Yes">Yes</option>
                   <option value="No">No</option>

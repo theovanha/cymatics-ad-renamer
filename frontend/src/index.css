@@ -189,20 +189,24 @@ button:disabled {
   background: linear-gradient(135deg, #10b981, #14b8a6);
   color: white;
   border: none;
+  min-height: 40px;
 }
 
 .btn-drive:hover:not(:disabled) {
   opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .btn-copy-doc {
   background: linear-gradient(135deg, #f59e0b, #f97316);
   color: white;
   border: none;
+  min-height: 40px;
 }
 
 .btn-copy-doc:hover:not(:disabled) {
   opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .btn-copy-doc:disabled {

@@ -15,17 +15,25 @@ interface CopyDocTemplate {
 function BulkApplyToolbar({ 
   onApply, 
   onRenumber,
-  currentStartNumber 
+  onFetchFromSheet,
+  currentStartNumber,
+  isFetchingNumber
 }: { 
   onApply: (field: string, value: string | boolean) => void;
   onRenumber: (startNumber: number) => void;
+  onFetchFromSheet: () => Promise<void>;
   currentStartNumber: number;
+  isFetchingNumber: boolean;
 }) {
-  const [campaign, setCampaign] = useState('');
   const [product, setProduct] = useState('');
   const [creator, setCreator] = useState('');
   const [offer, setOffer] = useState(false);
   const [startNumber, setStartNumber] = useState(currentStartNumber);
+  
+  // Update local state when currentStartNumber changes (from fetch)
+  useEffect(() => {
+    setStartNumber(currentStartNumber);
+  }, [currentStartNumber]);
 
   return (
     <div className="bulk-toolbar">
@@ -41,6 +49,14 @@ function BulkApplyToolbar({
           placeholder="1"
         />
         <button 
+          className="bulk-btn bulk-btn-fetch"
+          onClick={onFetchFromSheet}
+          disabled={isFetchingNumber}
+          title="Fetch next number from Google Sheet"
+        >
+          {isFetchingNumber ? '...' : '🔄'}
+        </button>
+        <button 
           className="bulk-btn"
           onClick={() => { onRenumber(startNumber); }}
         >
@@ -50,26 +66,9 @@ function BulkApplyToolbar({
 
       <div className="bulk-divider"></div>
 
-      {/* Apply to all - Campaign, Product, Offer */}
+      {/* Apply to all - Campaign, Product, Colab */}
       <span className="bulk-label">Apply to all:</span>
       
-      <div className="bulk-field">
-        <input
-          type="text"
-          value={campaign}
-          onChange={e => setCampaign(e.target.value)}
-          placeholder="Campaign"
-          className="bulk-input"
-        />
-        <button 
-          className="bulk-btn"
-          onClick={() => { onApply('campaign', campaign); }}
-          disabled={!campaign}
-        >
-          Apply
-        </button>
-      </div>
-
       <div className="bulk-field">
         <input
           type="text"
@@ -111,7 +110,7 @@ function BulkApplyToolbar({
             checked={offer}
             onChange={e => setOffer(e.target.checked)}
           />
-          <span>Offer</span>
+          <span>Colab</span>
         </label>
         <button 
           className="bulk-btn"
@@ -131,6 +130,8 @@ export default function ReviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [debugData, setDebugData] = useState<string>('');
+  const [isFetchingNumber, setIsFetchingNumber] = useState(false);
+  const [fetchedStartNumber, setFetchedStartNumber] = useState<number | null>(null);
   
   // Load groups on mount
   useEffect(() => {
@@ -207,6 +208,22 @@ export default function ReviewPage() {
     }
   }, []);
 
+  const handleFetchFromSheet = useCallback(async () => {
+    setIsFetchingNumber(true);
+    try {
+      const result = await api.getLastAdNumber();
+      setFetchedStartNumber(result.next_ad_number);
+      // Automatically apply the fetched number
+      await handleRenumber(result.next_ad_number);
+      showSuccess(`✓ Fetched starting number: ${result.next_ad_number}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch from sheet';
+      showSuccess(`✗ ${message}`);
+    } finally {
+      setIsFetchingNumber(false);
+    }
+  }, [handleRenumber]);
+
   const handleRegroupAsset = useCallback(async (assetId: string, targetGroupId: string | null, destinationIndex?: number) => {
     try {
       const newData = await api.regroupAsset(assetId, targetGroupId, destinationIndex);
@@ -264,6 +281,7 @@ export default function ReviewPage() {
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [copyProgress, setCopyProgress] = useState(0);
+  const [isPastingToSheet, setIsPastingToSheet] = useState(false);
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
@@ -320,6 +338,39 @@ export default function ReviewPage() {
       }
     } finally {
       setRenaming(false);
+    }
+  };
+
+  const handlePasteToSheet = async () => {
+    if (!sortedGroups || sortedGroups.length === 0) {
+      showSuccess('✗ No ad names to paste');
+      return;
+    }
+
+    setIsPastingToSheet(true);
+    try {
+      // Generate ad names from sorted groups
+      const adNames = sortedGroups.map(group => {
+        const adNum = String(group.ad_number).padStart(3, '0');
+        const parts = [adNum];
+        if (group.campaign) parts.push(group.campaign);
+        if (group.product) parts.push(group.product);
+        parts.push(group.format_token);
+        if (group.angle) parts.push(group.angle);
+        if (group.hook) parts.push(group.hook);
+        if (group.creator) parts.push(group.creator);
+        if (group.offer) parts.push('Colab');
+        if (group.date) parts.push(group.date);
+        return parts.join('_').replace(/__+/g, '_');
+      });
+
+      const result = await api.pasteAdNamesToSheet(adNames);
+      showSuccess(`✓ Pasted ${result.rows_added} ad names to sheet (starting at row ${result.first_row})`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      showSuccess(`✗ Failed to paste: ${message}`);
+    } finally {
+      setIsPastingToSheet(false);
     }
   };
   
@@ -415,27 +466,27 @@ export default function ReviewPage() {
         
         <div className="review-actions">
           <button 
-            className="btn-copy"
-            onClick={() => {
-              const adNames = sortedGroups.map(group => {
-                const adNum = String(group.ad_number).padStart(3, '0');
-                const parts = [adNum];
-                if (group.campaign) parts.push(group.campaign);
-                if (group.product) parts.push(group.product);
-                parts.push(group.format_token);
-                if (group.angle) parts.push(group.angle);
-                if (group.hook) parts.push(group.hook);
-                if (group.creator) parts.push(group.creator);
-                if (group.offer) parts.push('Offer');
-                if (group.date) parts.push(group.date);
-                return parts.join('_').replace(/__+/g, '_');
-              }).join('\n');
-              navigator.clipboard.writeText(adNames);
-              showSuccess(`✓ Copied ${sortedGroups.length} ad names`);
-            }}
-            title="Copy all ad names (one per line for Google Sheets)"
+            className="btn-paste-sheet"
+            onClick={handlePasteToSheet}
+            disabled={isPastingToSheet}
+            title="Paste all ad names to Google Sheet"
           >
-            📋 Copy Ad Names
+            {isPastingToSheet ? (
+              <>
+                <span className="mini-spinner"></span>
+                Pasting...
+              </>
+            ) : (
+              '📊 Paste to Sheet'
+            )}
+          </button>
+
+          <button
+            className="btn-open-sheet"
+            onClick={() => window.open('https://docs.google.com/spreadsheets/d/1de9qW6gwfrGzM_gch1gUy_4l5XRd6CnE67YKji42sHc/edit', '_blank')}
+            title="Open the ad tracker Google Sheet"
+          >
+            📋 Open Ad Tracker
           </button>
           
           <button
@@ -505,7 +556,9 @@ export default function ReviewPage() {
       <BulkApplyToolbar 
         onApply={handleBulkApply} 
         onRenumber={handleRenumber}
-        currentStartNumber={sortedGroups[0]?.ad_number || 1}
+        onFetchFromSheet={handleFetchFromSheet}
+        currentStartNumber={fetchedStartNumber || sortedGroups[0]?.ad_number || 1}
+        isFetchingNumber={isFetchingNumber}
       />
       
       <AssetTable
@@ -602,8 +655,8 @@ export default function ReviewPage() {
         .bulk-toolbar {
           display: flex;
           align-items: center;
-          gap: var(--space-sm);
-          padding: var(--space-sm) var(--space-md);
+          gap: var(--space-md);
+          padding: var(--space-md) var(--space-lg);
           background: var(--bg-secondary);
           border: 1px solid var(--border-color);
           border-radius: var(--radius-md);
@@ -615,7 +668,7 @@ export default function ReviewPage() {
           width: 1px;
           height: 24px;
           background: var(--border-color);
-          margin: 0 var(--space-xs);
+          margin: 0 var(--space-sm);
         }
 
         .bulk-label {
@@ -632,8 +685,8 @@ export default function ReviewPage() {
         }
 
         .bulk-input {
-          width: 100px;
-          padding: 0.35rem 0.5rem;
+          width: 120px;
+          padding: 0.4rem 0.6rem;
           font-size: 0.75rem;
           background: var(--bg-tertiary);
           border: 1px solid var(--border-color);
@@ -642,7 +695,7 @@ export default function ReviewPage() {
         }
 
         .bulk-input-number {
-          width: 50px;
+          width: 80px;
           text-align: center;
         }
 
@@ -676,6 +729,11 @@ export default function ReviewPage() {
         .bulk-btn:disabled {
           opacity: 0.4;
           cursor: not-allowed;
+        }
+
+        .bulk-btn-fetch {
+          min-width: 32px;
+          padding: 0.3rem 0.4rem;
         }
 
         .bulk-checkbox {
@@ -943,6 +1001,59 @@ export default function ReviewPage() {
             opacity: 1;
             transform: translateX(0);
           }
+        }
+
+        /* Action buttons - unified styling */
+        .btn-paste-sheet,
+        .btn-open-sheet,
+        .btn-drive,
+        .btn-copy-doc {
+          padding: 0.5rem 1.25rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: white;
+          border: none;
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          transition: all 0.2s;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          min-height: 40px;
+          white-space: nowrap;
+        }
+
+        .btn-paste-sheet {
+          background: linear-gradient(135deg, #34a853, #0f9d58);
+        }
+
+        .btn-open-sheet {
+          background: linear-gradient(135deg, #4285f4, #34a853);
+        }
+
+        .btn-drive {
+          background: linear-gradient(135deg, #10b981, #14b8a6);
+        }
+
+        .btn-copy-doc {
+          background: linear-gradient(135deg, #f59e0b, #f97316);
+        }
+
+        .btn-paste-sheet:hover:not(:disabled),
+        .btn-open-sheet:hover:not(:disabled),
+        .btn-drive:hover:not(:disabled),
+        .btn-copy-doc:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          opacity: 0.95;
+        }
+
+        .btn-paste-sheet:disabled,
+        .btn-drive:disabled,
+        .btn-copy-doc:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
       `}</style>
     </div>

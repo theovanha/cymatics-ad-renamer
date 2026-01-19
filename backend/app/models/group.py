@@ -18,14 +18,12 @@ class ConfidenceScores(BaseModel):
     """Confidence scores for inferred fields."""
     group: float = 0.0  # How confident we are in the grouping
     product: float = 0.0  # Product inference confidence
-    angle: float = 0.0  # Angle inference confidence
     offer: float = 0.0  # Offer inference confidence
 
 
 class UserInputs(BaseModel):
     """User-provided inputs for the naming pipeline."""
     client: str
-    campaign: Optional[str] = None  # Default to month token
     start_number: int = 1
     date: Optional[str] = None  # Default to today YYYY.MM.DD
     folder_path: str  # Local folder path
@@ -40,13 +38,11 @@ class AdGroup(BaseModel):
     # Inferred/editable fields
     ad_number: int
     product: str = ""
-    angle: str = ""
     hook: str = ""
     creator: str = ""
     offer: bool = False
     
     # User inputs (passed through)
-    campaign: str
     date: str
     
     # Ad copy fields
@@ -80,13 +76,9 @@ class AdGroup(BaseModel):
         
         # Build filename, omitting empty fields
         parts = [ad_num]
-        if self.campaign:
-            parts.append(self.campaign)
         if self.product:
             parts.append(self.product)
         parts.append(self.format_token)
-        if self.angle:
-            parts.append(self.angle)
         if self.hook:
             parts.append(self.hook)
         if self.creator:
@@ -116,5 +108,4 @@ class ExportRow(BaseModel):
     placement_inferred: str
     confidence_group: float
     confidence_product: float
-    confidence_angle: float
     confidence_offer: float

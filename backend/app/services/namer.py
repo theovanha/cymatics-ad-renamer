@@ -37,7 +37,7 @@ def generate_carousel_filename(group: AdGroup, asset: ProcessedAsset, card_index
 def generate_filename(group: AdGroup) -> str:
     """Generate standardized filename for an ad group.
     
-    Schema: {AdNumber}_{Campaign}_{Product}_{Format}_{Angle}_{Offer}_{YYYY.MM.DD}
+    Schema: {AdNumber}_{Product}_{Format}_{Hook}_{Creator}_{Offer}_{YYYY.MM.DD}
     
     Args:
         group: The ad group to generate filename for.
@@ -45,19 +45,8 @@ def generate_filename(group: AdGroup) -> str:
     Returns:
         Generated filename string.
     """
-    # Format ad number as 3-digit zero-padded
-    ad_number = f"{group.ad_number:03d}"
-    
-    # Get format token
-    format_token = group.format_token
-    
-    # Offer as Yes/No
-    offer_str = "Yes" if group.offer else "No"
-    
-    # Assemble filename
-    filename = f"{ad_number}_{group.campaign}_{group.product}_{format_token}_{group.angle}_{offer_str}_{group.date}"
-    
-    return filename
+    # Use the model's generate_filename method
+    return group.generate_filename()
 
 
 def generate_filenames_for_groups(groups: list[AdGroup]) -> dict[str, str]:

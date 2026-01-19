@@ -39,7 +39,6 @@ export type GroupType = 'standard' | 'carousel' | 'single';
 export interface ConfidenceScores {
   group: number;
   product: number;
-  angle: number;
   offer: number;
 }
 
@@ -49,11 +48,9 @@ export interface AdGroup {
   assets: ProcessedAsset[];
   ad_number: number;
   product: string;
-  angle: string;
   hook: string;
   creator: string;
   offer: boolean;
-  campaign: string;
   date: string;
   confidence: ConfidenceScores;
   format_token: string;
@@ -76,16 +73,13 @@ export interface GroupedAssets {
 export interface AnalyzeRequest {
   folder_path: string;
   client?: string;
-  campaign?: string;
   start_number?: number;
   date?: string;
 }
 
 export interface ConfigResponse {
-  default_campaign: string;
   default_date: string;
   default_start_number: number;
-  angle_options: string[];
   client_options: string[];
 }
 
@@ -98,22 +92,8 @@ export interface ExportRow {
   placement_inferred: string;
   confidence_group: number;
   confidence_product: number;
-  confidence_angle: number;
   confidence_offer: number;
 }
-
-// Angle options
-export const ANGLE_OPTIONS = [
-  'ProductFocus',
-  'Offer',
-  'Price',
-  'SocialProof',
-  'Education',
-  'BehindTheScenes',
-  'Founder',
-  'Brand',
-  'Newness',
-] as const;
 
 // Auth Types
 export interface UserInfo {

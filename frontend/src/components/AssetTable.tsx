@@ -23,13 +23,11 @@ export default function AssetTable({ groups, onUpdateGroup, onRegroupAsset, onRe
     const adNum = String(group.ad_number).padStart(3, '0');
     
     const parts = [adNum];
-    if (group.campaign) parts.push(group.campaign);
     if (group.product) parts.push(group.product);
     parts.push(group.format_token);
-    if (group.angle) parts.push(group.angle);
     if (group.hook) parts.push(group.hook);
     if (group.creator) parts.push(group.creator);
-    if (group.offer) parts.push('Offer');
+    if (group.offer) parts.push('Colab');
     if (group.date) parts.push(group.date);
     
     // Join and remove any accidental double underscores
@@ -181,12 +179,10 @@ export default function AssetTable({ groups, onUpdateGroup, onRegroupAsset, onRe
           <div className="th-cell th-dimensions">Dimensions</div>
           <div className="th-cell th-placement">Placement</div>
           <div className="th-cell th-format">Format</div>
-          <div className="th-cell th-campaign">Campaign</div>
           <div className="th-cell th-product">Product</div>
-          <div className="th-cell th-angle">Angle</div>
           <div className="th-cell th-hook">Hook</div>
           <div className="th-cell th-creator">Creator</div>
-          <div className="th-cell th-offer">Offer</div>
+          <div className="th-cell th-offer">Colab</div>
           <div className="th-cell th-newname">New Ad Name</div>
           <div className="th-cell th-newfile">New File</div>
         </div>
@@ -284,16 +280,6 @@ export default function AssetTable({ groups, onUpdateGroup, onRegroupAsset, onRe
                             </div>
 
                             {/* Group-level fields - show inputs only for first asset, empty placeholder for others */}
-                            <div className="td-cell td-campaign">
-                              {isFirstInGroup && (
-                                <input
-                                  type="text"
-                                  value={group.campaign}
-                                  onChange={e => handleFieldChange(group.id, 'campaign', e.target.value)}
-                                  className="table-input"
-                                />
-                              )}
-                            </div>
                             <div className="td-cell td-product">
                               {isFirstInGroup && (
                                 <input
@@ -301,17 +287,6 @@ export default function AssetTable({ groups, onUpdateGroup, onRegroupAsset, onRe
                                   value={group.product}
                                   onChange={e => handleFieldChange(group.id, 'product', e.target.value)}
                                   placeholder="Product..."
-                                  className="table-input"
-                                />
-                              )}
-                            </div>
-                            <div className="td-cell td-angle">
-                              {isFirstInGroup && (
-                                <input
-                                  type="text"
-                                  value={group.angle}
-                                  onChange={e => handleFieldChange(group.id, 'angle', e.target.value)}
-                                  placeholder="Angle..."
                                   className="table-input"
                                 />
                               )}
@@ -453,7 +428,7 @@ export default function AssetTable({ groups, onUpdateGroup, onRegroupAsset, onRe
         /* Table-like grid layout */
         .table-header {
           display: grid;
-          grid-template-columns: 40px 56px 140px 90px 70px 60px 100px 100px 100px 100px 100px 50px 180px 160px;
+          grid-template-columns: 40px 60px 160px 100px 80px 70px 120px 120px 120px 60px 200px 180px;
           background: var(--bg-tertiary);
           position: sticky;
           top: 0;
@@ -468,9 +443,12 @@ export default function AssetTable({ groups, onUpdateGroup, onRegroupAsset, onRe
           color: var(--text-secondary);
           text-transform: uppercase;
           letter-spacing: 0.3px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          white-space: normal;
+          word-wrap: break-word;
+          line-height: 1.3;
+          display: flex;
+          align-items: center;
+          min-height: 40px;
         }
 
         .table-body {
@@ -518,7 +496,7 @@ export default function AssetTable({ groups, onUpdateGroup, onRegroupAsset, onRe
 
         .asset-row {
           display: grid;
-          grid-template-columns: 40px 56px 140px 90px 70px 60px 100px 100px 100px 100px 100px 50px 180px 160px;
+          grid-template-columns: 40px 60px 160px 100px 80px 70px 120px 120px 120px 60px 200px 180px;
           border-bottom: 1px solid var(--border-color);
           background: var(--bg-card);
           transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.15s ease;

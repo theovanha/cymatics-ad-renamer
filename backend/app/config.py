@@ -44,9 +44,16 @@ class Settings(BaseModel):
     google_scopes: list[str] = [
         "openid",
         "https://www.googleapis.com/auth/drive",
+        "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/userinfo.profile",
     ]
+    
+    # Google Sheets settings
+    google_sheets_id: str = os.getenv("GOOGLE_SHEETS_ID", "1de9qW6gwfrGzM_gch1gUy_4l5XRd6CnE67YKji42sHc")
+    
+    # Copy Doc Templates folder
+    copy_doc_folder_id: str = os.getenv("COPY_DOC_FOLDER_ID", "172SxFyhZqQHIvq0aRGAF_ykP5DntkzFB")
     
     @staticmethod
     def get_default_campaign() -> str:
@@ -87,10 +94,6 @@ CLIENT_OPTIONS = [
     "ClientC",
 ]
 
-# Copy Doc Templates - Google Doc file IDs
-COPY_DOC_TEMPLATES = {
-    "template_1": "10DQcfWn3xV32g8TQBFNi9qYXXFZ-PFGx",
-    "template_2": "1MQM97S3klTm2XuQqZgpriX4VT_0oo1FS",
-    "template_3": "1CMNG-80mttkqOrkKXDLDq8b7uzz9-aH8",
-    "template_4": "1GocdJyjnbxr5Wa8AgP8XE-T7wPFu-hKx",
-}
+# Copy Doc Templates - Deprecated: Now using copy_doc_folder_id from settings
+# Kept for backwards compatibility
+COPY_DOC_TEMPLATES = {}

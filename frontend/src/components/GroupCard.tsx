@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { AdGroup } from '../types';
-import { ANGLE_OPTIONS } from '../types';
 import EditableField from './EditableField';
 
 interface GroupCardProps {
@@ -76,19 +75,11 @@ export default function GroupCard({ group, selected, onToggleSelect, onUpdate }:
             confidence={group.confidence.product}
             onChange={value => onUpdate({ product: value })}
           />
-          
-          <EditableField
-            label="Angle"
-            value={group.angle}
-            confidence={group.confidence.angle}
-            onChange={value => onUpdate({ angle: value })}
-            options={[...ANGLE_OPTIONS]}
-          />
         </div>
         
         <div className="field-row">
           <div className="offer-field">
-            <label>Offer</label>
+            <label>Colab</label>
             <div className="offer-toggle">
               <button
                 className={`offer-btn ${!group.offer ? 'active' : ''}`}

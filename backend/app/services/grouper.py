@@ -35,8 +35,7 @@ async def group_assets(
     groups: list[AdGroup] = []
     used_assets: set[str] = set()
     
-    # Determine campaign and date
-    campaign = user_inputs.campaign or ""  # Leave blank by default
+    # Determine date
     date = user_inputs.date or settings.get_default_date()
     
     current_ad_number = user_inputs.start_number
@@ -47,7 +46,7 @@ async def group_assets(
     sorted_feeds = sorted(feeds, key=lambda a: _extract_number_from_filename(a.asset.name) or 999)
     
     pair_groups, pair_used = await _match_story_feed_pairs(
-        sorted_stories, sorted_feeds, campaign, date, current_ad_number
+        sorted_stories, sorted_feeds, date, current_ad_number
     )
     groups.extend(pair_groups)
     used_assets.update(pair_used)
@@ -56,7 +55,7 @@ async def group_assets(
     # 2. THEN: Detect carousels from REMAINING feed images only
     remaining_feeds = [f for f in feeds if f.asset.id not in used_assets]
     carousel_groups, carousel_used = await _detect_carousels(
-        remaining_feeds, campaign, date, current_ad_number
+        remaining_feeds, date, current_ad_number
     )
     groups.extend(carousel_groups)
     used_assets.update(carousel_used)
@@ -72,7 +71,6 @@ async def group_assets(
             group_type=GroupType.SINGLE,
             assets=[asset],
             ad_number=current_ad_number,
-            campaign=campaign,
             date=date,
             confidence=ConfidenceScores(group=0.2),  # Low confidence for single assets
         )
@@ -89,7 +87,6 @@ async def group_assets(
 
 async def _detect_carousels(
     feeds: list[ProcessedAsset],
-    campaign: str,
     date: str,
     start_number: int,
 ) -> tuple[list[AdGroup], set[str]]:
@@ -126,7 +123,6 @@ async def _detect_carousels(
             group_type=GroupType.CAROUSEL,
             assets=sorted_feeds,
             ad_number=current_number,
-            campaign=campaign,
             date=date,
             confidence=ConfidenceScores(group=confidence),
         )
@@ -145,7 +141,6 @@ async def _detect_carousels(
                 group_type=GroupType.CAROUSEL,
                 assets=sorted_cluster,
                 ad_number=current_number,
-                campaign=campaign,
                 date=date,
                 confidence=ConfidenceScores(group=confidence),
             )
@@ -159,7 +154,6 @@ async def _detect_carousels(
 async def _match_story_feed_pairs(
     stories: list[ProcessedAsset],
     feeds: list[ProcessedAsset],
-    campaign: str,
     date: str,
     start_number: int,
 ) -> tuple[list[AdGroup], set[str]]:
@@ -199,7 +193,6 @@ async def _match_story_feed_pairs(
             group_type=GroupType.STANDARD,
             assets=[story, feed],
             ad_number=current_number,
-            campaign=campaign,
             date=date,
             confidence=ConfidenceScores(group=confidence),
         )

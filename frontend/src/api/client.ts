@@ -212,4 +212,27 @@ export const api = {
       body: JSON.stringify({ template_id: templateId }),
     });
   },
+
+  // ===== Google Sheets Integration =====
+
+  /**
+   * Get the last ad number from Google Sheets
+   */
+  async getLastAdNumber(spreadsheetId?: string): Promise<{ success: boolean; next_ad_number: number; spreadsheet_id: string }> {
+    const params = spreadsheetId ? `?spreadsheet_id=${encodeURIComponent(spreadsheetId)}` : '';
+    return fetchJson<{ success: boolean; next_ad_number: number; spreadsheet_id: string }>(`${API_BASE}/sheets/last-ad-number${params}`);
+  },
+
+  /**
+   * Paste ad names to Google Sheets
+   */
+  async pasteAdNamesToSheet(adNames: string[], spreadsheetId?: string): Promise<{ success: boolean; rows_added: number; first_row: number; spreadsheet_id: string }> {
+    return fetchJson<{ success: boolean; rows_added: number; first_row: number; spreadsheet_id: string }>(`${API_BASE}/sheets/paste-names`, {
+      method: 'POST',
+      body: JSON.stringify({ 
+        ad_names: adNames,
+        spreadsheet_id: spreadsheetId 
+      }),
+    });
+  },
 };

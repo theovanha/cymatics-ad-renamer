@@ -12,7 +12,7 @@ from app.config import settings
 from app.services.google_auth import google_auth_service
 
 # Frontend URL for redirects - defaults to localhost for development
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5174")
 
 router = APIRouter()
 

@@ -37,7 +37,6 @@ def generate_export_rows(groups: list[AdGroup]) -> list[ExportRow]:
                     placement_inferred=asset.placement.value,
                     confidence_group=round(group.confidence.group, 3),
                     confidence_product=round(group.confidence.product, 3),
-                    confidence_angle=round(group.confidence.angle, 3),
                     confidence_offer=round(group.confidence.offer, 3),
                 )
                 rows.append(row)
@@ -55,7 +54,6 @@ def generate_export_rows(groups: list[AdGroup]) -> list[ExportRow]:
                     placement_inferred=asset.placement.value,
                     confidence_group=round(group.confidence.group, 3),
                     confidence_product=round(group.confidence.product, 3),
-                    confidence_angle=round(group.confidence.angle, 3),
                     confidence_offer=round(group.confidence.offer, 3),
                 )
                 rows.append(row)
@@ -87,7 +85,6 @@ def export_to_csv(groups: list[AdGroup]) -> str:
         "placement_inferred",
         "confidence_group",
         "confidence_product",
-        "confidence_angle",
         "confidence_offer",
     ])
     
@@ -102,7 +99,6 @@ def export_to_csv(groups: list[AdGroup]) -> str:
             row.placement_inferred,
             row.confidence_group,
             row.confidence_product,
-            row.confidence_angle,
             row.confidence_offer,
         ])
     

@@ -18,7 +18,8 @@ from app.services.fingerprint import compute_fingerprint
 from app.services.grouper import group_assets, sort_assets_by_filename_number
 from app.services.inference import infer_fields
 from app.routers.auth import get_credentials_from_session
-from app.config import COPY_DOC_TEMPLATES
+from app.services.google_sheets import google_sheets_service
+from app.config import COPY_DOC_TEMPLATES, settings
 
 router = APIRouter()
 
@@ -624,7 +625,7 @@ class CopyDocRequest(BaseModel):
 async def get_copy_doc_templates(
     session_id: Optional[str] = Cookie(default=None)
 ):
-    """Get available copy doc templates with their names from Drive."""
+    """Get available copy doc templates from the configured Drive folder."""
     credentials = get_credentials_from_session(session_id)
     if not credentials:
         raise HTTPException(status_code=401, detail="Please sign in with Google first")
@@ -635,28 +636,37 @@ async def get_copy_doc_templates(
         service = build("drive", "v3", credentials=credentials)
         templates = []
         
-        for template_id, file_id in COPY_DOC_TEMPLATES.items():
-            try:
-                file_info = service.files().get(
-                    fileId=file_id,
-                    fields="id, name",
-                    supportsAllDrives=True
-                ).execute()
-                templates.append({
-                    "id": template_id,
-                    "file_id": file_id,
-                    "name": file_info.get("name", template_id)
-                })
-            except Exception as e:
-                print(f"[DEBUG] Failed to get template {file_id}: {e}")
-                templates.append({
-                    "id": template_id,
-                    "file_id": file_id,
-                    "name": f"Template ({template_id})"
-                })
+        # List all files from the copy doc templates folder
+        folder_id = settings.copy_doc_folder_id
+        
+        # Query for Word docs and Google Docs in the folder
+        query = (
+            f"'{folder_id}' in parents and "
+            "(mimeType='application/vnd.google-apps.document' or "
+            "mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document') and "
+            "trashed=false"
+        )
+        
+        results = service.files().list(
+            q=query,
+            fields="files(id, name, mimeType)",
+            supportsAllDrives=True,
+            includeItemsFromAllDrives=True,
+            orderBy="name"
+        ).execute()
+        
+        files = results.get('files', [])
+        
+        for file in files:
+            templates.append({
+                "id": file['id'],
+                "file_id": file['id'],
+                "name": file['name']
+            })
         
         return {"templates": templates}
     except Exception as e:
+        print(f"[DEBUG] Failed to fetch templates from folder: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch templates: {str(e)}")
 
 
@@ -672,13 +682,11 @@ async def copy_doc_to_folder(
     if not credentials:
         raise HTTPException(status_code=401, detail="Please sign in with Google first")
     
-    if request.template_id not in COPY_DOC_TEMPLATES:
-        raise HTTPException(status_code=400, detail=f"Unknown template: {request.template_id}")
-    
+    # Template ID is now the actual file ID from the folder
     if not _current_source:
         raise HTTPException(status_code=400, detail="No Drive folder selected. Please analyze a folder first.")
     
-    template_file_id = COPY_DOC_TEMPLATES[request.template_id]
+    template_file_id = request.template_id
     target_folder_id = _current_source.folder_id
     
     from googleapiclient.discovery import build
@@ -719,3 +727,77 @@ async def copy_doc_to_folder(
     except Exception as e:
         print(f"[DEBUG] Failed to copy doc: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to copy document: {str(e)}")
+
+
+# ===== Google Sheets Integration =====
+
+@router.get("/sheets/last-ad-number")
+async def get_last_ad_number(
+    spreadsheet_id: Optional[str] = None,
+    session_id: Optional[str] = Cookie(default=None)
+):
+    """Get the last ad number from the Google Sheet.
+    
+    Reads column D from the Ad_Log sheet and returns the next number to use.
+    """
+    # Check authentication
+    credentials = get_credentials_from_session(session_id)
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated. Please sign in with Google.")
+    
+    # Use provided spreadsheet_id or default from settings
+    sheet_id = spreadsheet_id or settings.google_sheets_id
+    if not sheet_id:
+        raise HTTPException(status_code=400, detail="No spreadsheet ID provided")
+    
+    try:
+        next_number = google_sheets_service.get_last_ad_number(credentials, sheet_id)
+        return {
+            "success": True,
+            "next_ad_number": next_number,
+            "spreadsheet_id": sheet_id
+        }
+    except Exception as e:
+        print(f"[DEBUG] Failed to get last ad number: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to read from sheet: {str(e)}")
+
+
+class PasteAdNamesRequest(BaseModel):
+    """Request body for pasting ad names to sheet."""
+    spreadsheet_id: Optional[str] = None
+    ad_names: list[str]
+
+
+@router.post("/sheets/paste-names")
+async def paste_ad_names_to_sheet(
+    request: PasteAdNamesRequest,
+    session_id: Optional[str] = Cookie(default=None)
+):
+    """Paste ad names to the Google Sheet.
+    
+    Appends ad names to column D in the Ad_Log sheet.
+    """
+    # Check authentication
+    credentials = get_credentials_from_session(session_id)
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated. Please sign in with Google.")
+    
+    # Use provided spreadsheet_id or default from settings
+    sheet_id = request.spreadsheet_id or settings.google_sheets_id
+    if not sheet_id:
+        raise HTTPException(status_code=400, detail="No spreadsheet ID provided")
+    
+    if not request.ad_names:
+        raise HTTPException(status_code=400, detail="No ad names provided")
+    
+    try:
+        result = google_sheets_service.paste_ad_names(credentials, sheet_id, request.ad_names)
+        return {
+            "success": True,
+            "rows_added": result['rows_added'],
+            "first_row": result['first_row'],
+            "spreadsheet_id": sheet_id
+        }
+    except Exception as e:
+        print(f"[DEBUG] Failed to paste ad names: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to write to sheet: {str(e)}")
