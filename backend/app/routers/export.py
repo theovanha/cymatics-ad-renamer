@@ -51,7 +51,7 @@ async def preview_export():
 
 @router.post("/export/rename")
 async def rename_files_in_drive(
-    session_id: Optional[str] = Cookie(default=None)
+    session_token: Optional[str] = Cookie(default=None)
 ) -> dict:
     """Rename all files in Google Drive to their new names.
     
@@ -68,7 +68,7 @@ async def rename_files_in_drive(
         )
     
     # Verify we still have valid credentials
-    credentials = get_credentials_from_session(session_id)
+    credentials = get_credentials_from_session(session_token)
     if not credentials:
         raise HTTPException(status_code=401, detail="Session expired. Please sign in again.")
     

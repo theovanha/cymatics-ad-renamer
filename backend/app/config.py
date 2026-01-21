@@ -37,8 +37,19 @@ class Settings(BaseModel):
     google_redirect_uri: str = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/callback")
     google_picker_api_key: str = os.getenv("GOOGLE_PICKER_API_KEY", "")
     
-    # Session settings
+    # Session settings (deprecated - using JWT now)
     session_secret: str = os.getenv("SESSION_SECRET", "vanha-secret-change-me")
+    
+    # JWT settings
+    jwt_secret: str = os.getenv("JWT_SECRET", "change-me-in-production-please")
+    jwt_algorithm: str = "HS256"
+    jwt_expiration_days: int = 7
+    
+    # CORS settings
+    allowed_origins: list[str] = os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost:5173,http://localhost:3000"
+    ).split(",") if os.getenv("ALLOWED_ORIGINS") else ["http://localhost:5173", "http://localhost:3000"]
     
     # OAuth scopes (include openid as Google adds it automatically)
     google_scopes: list[str] = [

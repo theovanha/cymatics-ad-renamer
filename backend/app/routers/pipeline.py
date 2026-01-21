@@ -108,7 +108,7 @@ def _is_drive_url(path: str) -> bool:
 @router.post("/analyze")
 async def analyze_assets(
     request: AnalyzeRequest,
-    session_id: Optional[str] = Cookie(default=None)
+    session_token: Optional[str] = Cookie(default=None)
 ) -> GroupedAssets:
     """Analyze assets in a folder and group them.
     
@@ -130,7 +130,7 @@ async def analyze_assets(
         
         if is_drive:
             # Google Drive source
-            credentials = get_credentials_from_session(session_id)
+            credentials = get_credentials_from_session(session_token)
             if not credentials:
                 raise HTTPException(
                     status_code=401, 
@@ -300,7 +300,7 @@ async def get_groups() -> GroupedAssets:
 @router.get("/drive/thumbnail/{file_id}")
 async def get_drive_thumbnail(
     file_id: str,
-    session_id: Optional[str] = Cookie(default=None)
+    session_token: Optional[str] = Cookie(default=None)
 ):
     """Proxy Drive thumbnails (requires auth)."""
     global _current_source
@@ -308,7 +308,7 @@ async def get_drive_thumbnail(
     if _current_source is None:
         raise HTTPException(status_code=404, detail="No Drive source available")
     
-    credentials = get_credentials_from_session(session_id)
+    credentials = get_credentials_from_session(session_token)
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
@@ -623,10 +623,10 @@ class CopyDocRequest(BaseModel):
 
 @router.get("/copy-doc/templates")
 async def get_copy_doc_templates(
-    session_id: Optional[str] = Cookie(default=None)
+    session_token: Optional[str] = Cookie(default=None)
 ):
     """Get available copy doc templates from the configured Drive folder."""
-    credentials = get_credentials_from_session(session_id)
+    credentials = get_credentials_from_session(session_token)
     if not credentials:
         raise HTTPException(status_code=401, detail="Please sign in with Google first")
     
@@ -673,12 +673,12 @@ async def get_copy_doc_templates(
 @router.post("/copy-doc")
 async def copy_doc_to_folder(
     request: CopyDocRequest,
-    session_id: Optional[str] = Cookie(default=None)
+    session_token: Optional[str] = Cookie(default=None)
 ):
     """Copy a doc template to the current Drive folder."""
     global _current_inputs, _current_source
     
-    credentials = get_credentials_from_session(session_id)
+    credentials = get_credentials_from_session(session_token)
     if not credentials:
         raise HTTPException(status_code=401, detail="Please sign in with Google first")
     
@@ -734,14 +734,14 @@ async def copy_doc_to_folder(
 @router.get("/sheets/last-ad-number")
 async def get_last_ad_number(
     spreadsheet_id: Optional[str] = None,
-    session_id: Optional[str] = Cookie(default=None)
+    session_token: Optional[str] = Cookie(default=None)
 ):
     """Get the last ad number from the Google Sheet.
     
     Reads column D from the Ad_Log sheet and returns the next number to use.
     """
     # Check authentication
-    credentials = get_credentials_from_session(session_id)
+    credentials = get_credentials_from_session(session_token)
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated. Please sign in with Google.")
     
@@ -771,14 +771,14 @@ class PasteAdNamesRequest(BaseModel):
 @router.post("/sheets/paste-names")
 async def paste_ad_names_to_sheet(
     request: PasteAdNamesRequest,
-    session_id: Optional[str] = Cookie(default=None)
+    session_token: Optional[str] = Cookie(default=None)
 ):
     """Paste ad names to the Google Sheet.
     
     Appends ad names to column D in the Ad_Log sheet.
     """
     # Check authentication
-    credentials = get_credentials_from_session(session_id)
+    credentials = get_credentials_from_session(session_token)
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated. Please sign in with Google.")
     

@@ -10,14 +10,12 @@ from pydantic import BaseModel
 
 from app.config import settings
 from app.services.google_auth import google_auth_service
+from app.services.jwt_auth import create_jwt_token, decode_jwt_token, get_user_from_token, get_tokens_from_jwt
 
 # Frontend URL for redirects - defaults to localhost for development
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5174")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 router = APIRouter()
-
-# In-memory session storage (use Redis/database in production)
-_sessions: dict[str, dict] = {}
 
 
 class UserInfo(BaseModel):
@@ -36,27 +34,19 @@ class AuthStatus(BaseModel):
     client_id: Optional[str] = None
 
 
-def _get_session(session_id: Optional[str]) -> Optional[dict]:
-    """Get session data by ID."""
-    if not session_id:
+def _get_session_from_jwt(jwt_token: Optional[str]) -> Optional[dict]:
+    """Get session data from JWT token."""
+    if not jwt_token:
         return None
-    return _sessions.get(session_id)
-
-
-def _create_session(token_data: dict, user_info: dict) -> str:
-    """Create a new session and return session ID."""
-    session_id = secrets.token_urlsafe(32)
-    _sessions[session_id] = {
-        "tokens": token_data,
-        "user": user_info,
-    }
-    return session_id
-
-
-def _delete_session(session_id: str) -> None:
-    """Delete a session."""
-    if session_id in _sessions:
-        del _sessions[session_id]
+    
+    try:
+        payload = decode_jwt_token(jwt_token)
+        return {
+            "tokens": payload.get("tokens"),
+            "user": payload.get("user"),
+        }
+    except HTTPException:
+        return None
 
 
 @router.get("/login")
@@ -86,16 +76,16 @@ async def callback(code: str, state: Optional[str] = None, error: Optional[str] 
         credentials = google_auth_service.get_credentials(token_data)
         user_info = google_auth_service.get_user_info(credentials)
         
-        # Create session
-        session_id = _create_session(token_data, user_info)
+        # Create JWT token
+        jwt_token = create_jwt_token(user_info, token_data)
         
-        # Redirect to frontend with session cookie
+        # Redirect to frontend with JWT cookie
         response = RedirectResponse(url=f"{FRONTEND_URL}/")
         # Use secure cookies in production (HTTPS)
         is_production = not FRONTEND_URL.startswith("http://localhost")
         response.set_cookie(
-            key="session_id",
-            value=session_id,
+            key="session_token",
+            value=jwt_token,
             httponly=True,
             secure=is_production,
             samesite="none" if is_production else "lax",
@@ -110,9 +100,9 @@ async def callback(code: str, state: Optional[str] = None, error: Optional[str] 
 
 
 @router.get("/me", response_model=AuthStatus)
-async def get_current_user(session_id: Optional[str] = Cookie(default=None)):
+async def get_current_user(session_token: Optional[str] = Cookie(default=None)):
     """Get current authenticated user."""
-    session = _get_session(session_id)
+    session = _get_session_from_jwt(session_token)
     
     if not session:
         return AuthStatus(
@@ -130,19 +120,17 @@ async def get_current_user(session_id: Optional[str] = Cookie(default=None)):
 
 
 @router.post("/logout")
-async def logout(response: Response, session_id: Optional[str] = Cookie(default=None)):
+async def logout(response: Response, session_token: Optional[str] = Cookie(default=None)):
     """Log out and clear session."""
-    if session_id:
-        _delete_session(session_id)
-    
-    response.delete_cookie(key="session_id")
+    # Just delete the cookie - JWT is stateless
+    response.delete_cookie(key="session_token")
     return {"success": True}
 
 
 @router.get("/tokens")
-async def get_tokens(session_id: Optional[str] = Cookie(default=None)):
+async def get_tokens(session_token: Optional[str] = Cookie(default=None)):
     """Get current tokens (for Drive API calls)."""
-    session = _get_session(session_id)
+    session = _get_session_from_jwt(session_token)
     
     if not session:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -150,9 +138,9 @@ async def get_tokens(session_id: Optional[str] = Cookie(default=None)):
     return session["tokens"]
 
 
-def get_credentials_from_session(session_id: Optional[str]):
-    """Helper to get Google credentials from session."""
-    session = _get_session(session_id)
+def get_credentials_from_session(session_token: Optional[str]):
+    """Helper to get Google credentials from JWT token."""
+    session = _get_session_from_jwt(session_token)
     if not session:
         return None
     
@@ -162,7 +150,7 @@ def get_credentials_from_session(session_id: Optional[str]):
     # Refresh if expired
     if credentials.expired:
         credentials = google_auth_service.refresh_credentials(credentials)
-        # Update session with new tokens
-        session["tokens"]["access_token"] = credentials.token
+        # Note: With JWT, we can't update the token in-place
+        # The user will need to re-authenticate after 7 days
     
     return credentials

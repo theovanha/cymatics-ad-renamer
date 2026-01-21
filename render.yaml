@@ -1,0 +1,46 @@
+# Render Blueprint - Infrastructure as Code
+# This file defines the backend service configuration for Render
+
+services:
+  - type: web
+    name: cymatics-ad-renamer-backend
+    env: python
+    region: oregon  # Choose region closest to your users
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    
+    # Health check
+    healthCheckPath: /
+    
+    # Environment variables
+    # Set these values in the Render dashboard after deployment
+    envVars:
+      - key: GOOGLE_CLIENT_ID
+        sync: false  # Set manually in dashboard
+      
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false  # Set manually in dashboard
+      
+      - key: GOOGLE_PICKER_API_KEY
+        sync: false  # Set manually in dashboard
+      
+      - key: GOOGLE_REDIRECT_URI
+        value: https://cymatics-ad-renamer-backend.onrender.com/api/auth/callback
+      
+      - key: FRONTEND_URL
+        value: https://your-app.netlify.app
+      
+      - key: JWT_SECRET
+        generateValue: true  # Render will auto-generate a secure secret
+      
+      - key: GOOGLE_SHEETS_ID
+        value: 1de9qW6gwfrGzM_gch1gUy_4l5XRd6CnE67YKji42sHc
+      
+      - key: COPY_DOC_FOLDER_ID
+        value: 172SxFyhZqQHIvq0aRGAF_ykP5DntkzFB
+      
+      - key: ALLOWED_ORIGINS
+        value: https://your-app.netlify.app,http://localhost:5173
+    
+    # Auto-deploy from main branch
+    autoDeploy: true
