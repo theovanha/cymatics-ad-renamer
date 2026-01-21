@@ -13,13 +13,12 @@ export default function GroupCard({ group, selected, onToggleSelect, onUpdate }:
   const [expanded, setExpanded] = useState(false);
   
   // Generate filename preview
-  const filename = `${String(group.ad_number).padStart(3, '0')}_${group.campaign}_${group.product}_${group.format_token}_${group.angle}_${group.offer ? 'Yes' : 'No'}_${group.date}`;
+  const filename = `${String(group.ad_number).padStart(3, '0')}_${group.product}_${group.format_token}_${group.offer ? 'Yes' : 'No'}_${group.date}`;
   
   // Calculate min confidence for color
   const minConfidence = Math.min(
     group.confidence.group,
     group.confidence.product,
-    group.confidence.angle,
     group.confidence.offer
   );
   

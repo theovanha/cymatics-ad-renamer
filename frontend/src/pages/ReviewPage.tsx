@@ -353,10 +353,8 @@ export default function ReviewPage() {
       const adNames = sortedGroups.map(group => {
         const adNum = String(group.ad_number).padStart(3, '0');
         const parts = [adNum];
-        if (group.campaign) parts.push(group.campaign);
         if (group.product) parts.push(group.product);
         parts.push(group.format_token);
-        if (group.angle) parts.push(group.angle);
         if (group.hook) parts.push(group.hook);
         if (group.creator) parts.push(group.creator);
         if (group.offer) parts.push('Colab');

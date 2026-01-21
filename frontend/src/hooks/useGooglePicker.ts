@@ -108,10 +108,7 @@ export function useGooglePicker({ apiKey, clientId, onFolderSelected }: UseGoogl
         
         // Load gapi.client and picker
         await new Promise<void>((resolve, reject) => {
-          window.gapi.load('client:picker', {
-            callback: resolve,
-            onerror: () => reject(new Error('Failed to load gapi.client:picker')),
-          });
+          window.gapi.load('client:picker', () => resolve(), () => reject(new Error('Failed to load gapi.client:picker')));
         });
         console.log('[Picker] gapi.client:picker loaded, initializing...');
 

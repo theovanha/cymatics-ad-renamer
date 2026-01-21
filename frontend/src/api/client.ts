@@ -51,7 +51,7 @@ export const api = {
    */
   async updateGroup(
     groupId: string,
-    updates: Partial<Pick<AdGroup, 'product' | 'angle' | 'hook' | 'creator' | 'offer' | 'campaign' | 'primary_text' | 'headline' | 'description' | 'cta' | 'url' | 'comment_media_buyer' | 'comment_client'>>
+    updates: Partial<Pick<AdGroup, 'product' | 'hook' | 'creator' | 'offer' | 'primary_text' | 'headline' | 'description' | 'cta' | 'url' | 'comment_media_buyer' | 'comment_client'>>
   ): Promise<AdGroup> {
     return fetchJson<AdGroup>(`${API_BASE}/groups/${groupId}`, {
       method: 'PUT',
