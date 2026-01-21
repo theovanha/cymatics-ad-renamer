@@ -5,8 +5,8 @@ pillow==11.1.0
 ffmpeg-python==0.2.0
 pytesseract==0.3.10
 imagehash==4.3.1
-numpy==1.26.3
-pydantic==2.5.3
+numpy==1.26.4
+pydantic==2.10.5
 aiofiles==23.2.1
 python-dotenv==1.0.0
 google-auth==2.27.0
