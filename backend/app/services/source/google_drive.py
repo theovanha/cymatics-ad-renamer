@@ -216,10 +216,7 @@ class GoogleDriveSource(AssetSource):
         
         # If thumbnail already exists, return it
         if thumb_path.exists():
-            // #region agent log
-            import json; Path("/Users/theovanwyk/Desktop/Cursor Projects/Cymatics Ad Renamer/.cursor/debug.log").parent.mkdir(parents=True, exist_ok=True); Path("/Users/theovanwyk/Desktop/Cursor Projects/Cymatics Ad Renamer/.cursor/debug.log").open("a").write(json.dumps({"timestamp":__import__('time').time()*1000,"location":"google_drive.py:219","message":"Thumbnail exists, returning relative URL","data":{"thumb_name":thumb_name,"relative_url":f"/temp/thumbnails/{thumb_name}"},"sessionId":"debug-session","hypothesisId":"H1"})+"\n")
-            // #endregion
-            return f"/temp/thumbnails/{thumb_name}"
+            return f"{settings.backend_base_url}/temp/thumbnails/{thumb_name}"
         
         # Make sure file is downloaded first
         local_path = await self.get_asset_path(asset_id)
@@ -229,10 +226,7 @@ class GoogleDriveSource(AssetSource):
             # For images, just copy (or resize)
             try:
                 shutil.copy(local_file, thumb_path)
-                // #region agent log
-                import json; Path("/Users/theovanwyk/Desktop/Cursor Projects/Cymatics Ad Renamer/.cursor/debug.log").open("a").write(json.dumps({"timestamp":__import__('time').time()*1000,"location":"google_drive.py:229","message":"Image thumbnail created, returning relative URL","data":{"thumb_name":thumb_name,"relative_url":f"/temp/thumbnails/{thumb_name}"},"sessionId":"debug-session","hypothesisId":"H1"})+"\n")
-                // #endregion
-                return f"/temp/thumbnails/{thumb_name}"
+                return f"{settings.backend_base_url}/temp/thumbnails/{thumb_name}"
             except Exception as e:
                 print(f"[DEBUG] Failed to copy image thumbnail: {e}")
         
@@ -245,7 +239,7 @@ class GoogleDriveSource(AssetSource):
             if frame_path.exists():
                 print(f"[DEBUG] Found existing frame, copying to thumbnail")
                 shutil.copy(frame_path, thumb_path)
-                return f"/temp/thumbnails/{thumb_name}"
+                return f"{settings.backend_base_url}/temp/thumbnails/{thumb_name}"
             
             # Try ffmpeg directly
             try:
@@ -262,7 +256,7 @@ class GoogleDriveSource(AssetSource):
                 result = subprocess.run(cmd, capture_output=True, timeout=15)
                 if thumb_path.exists():
                     print(f"[DEBUG] ffmpeg thumbnail created successfully")
-                    return f"/temp/thumbnails/{thumb_name}"
+                    return f"{settings.backend_base_url}/temp/thumbnails/{thumb_name}"
                 else:
                     print(f"[DEBUG] ffmpeg failed: {result.stderr.decode()[:200]}")
             except FileNotFoundError:
@@ -278,7 +272,7 @@ class GoogleDriveSource(AssetSource):
                 ql_output = thumbs_dir / ql_thumb_name
                 if ql_output.exists():
                     shutil.move(ql_output, thumb_path)
-                    return f"/temp/thumbnails/{thumb_name}"
+                    return f"{settings.backend_base_url}/temp/thumbnails/{thumb_name}"
             except Exception:
                 pass
         

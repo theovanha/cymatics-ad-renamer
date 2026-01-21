@@ -66,6 +66,9 @@ class Settings(BaseModel):
     # Copy Doc Templates folder
     copy_doc_folder_id: str = os.getenv("COPY_DOC_FOLDER_ID", "172SxFyhZqQHIvq0aRGAF_ykP5DntkzFB")
     
+    # Backend base URL (for absolute thumbnail URLs in production)
+    backend_base_url: str = os.getenv("BACKEND_BASE_URL", "http://localhost:8000")
+    
     @staticmethod
     def get_default_campaign() -> str:
         """Get default campaign name based on current month."""

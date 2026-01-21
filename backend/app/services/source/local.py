@@ -90,7 +90,7 @@ class LocalFolderSource(AssetSource):
             if not thumb_path.exists():
                 shutil.copy(path, thumb_path)
             
-            return f"/temp/thumbnails/{thumb_name}"
+            return f"{settings.backend_base_url}/temp/thumbnails/{thumb_name}"
         
         # For videos, check if frame was already extracted by ffmpeg
         frame_path = settings.temp_dir / "frames" / f"{path.stem}_frame_001.jpg"
@@ -105,7 +105,7 @@ class LocalFolderSource(AssetSource):
             await self._generate_video_thumbnail_macos(path, thumb_path)
         
         if thumb_path.exists():
-            return f"/temp/thumbnails/{thumb_name}"
+            return f"{settings.backend_base_url}/temp/thumbnails/{thumb_name}"
         
         return ""
     
