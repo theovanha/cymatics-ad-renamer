@@ -216,6 +216,9 @@ class GoogleDriveSource(AssetSource):
         
         # If thumbnail already exists, return it
         if thumb_path.exists():
+            // #region agent log
+            import json; Path("/Users/theovanwyk/Desktop/Cursor Projects/Cymatics Ad Renamer/.cursor/debug.log").parent.mkdir(parents=True, exist_ok=True); Path("/Users/theovanwyk/Desktop/Cursor Projects/Cymatics Ad Renamer/.cursor/debug.log").open("a").write(json.dumps({"timestamp":__import__('time').time()*1000,"location":"google_drive.py:219","message":"Thumbnail exists, returning relative URL","data":{"thumb_name":thumb_name,"relative_url":f"/temp/thumbnails/{thumb_name}"},"sessionId":"debug-session","hypothesisId":"H1"})+"\n")
+            // #endregion
             return f"/temp/thumbnails/{thumb_name}"
         
         # Make sure file is downloaded first
@@ -226,6 +229,9 @@ class GoogleDriveSource(AssetSource):
             # For images, just copy (or resize)
             try:
                 shutil.copy(local_file, thumb_path)
+                // #region agent log
+                import json; Path("/Users/theovanwyk/Desktop/Cursor Projects/Cymatics Ad Renamer/.cursor/debug.log").open("a").write(json.dumps({"timestamp":__import__('time').time()*1000,"location":"google_drive.py:229","message":"Image thumbnail created, returning relative URL","data":{"thumb_name":thumb_name,"relative_url":f"/temp/thumbnails/{thumb_name}"},"sessionId":"debug-session","hypothesisId":"H1"})+"\n")
+                // #endregion
                 return f"/temp/thumbnails/{thumb_name}"
             except Exception as e:
                 print(f"[DEBUG] Failed to copy image thumbnail: {e}")

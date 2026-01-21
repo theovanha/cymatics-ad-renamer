@@ -237,6 +237,9 @@ export default function AssetTable({ groups, onUpdateGroup, onRegroupAsset, onRe
                             {/* Thumbnail */}
                             <div className="td-cell td-thumbnail">
                               {asset.thumbnail_url ? (
+                                // #region agent log
+                                fetch('http://127.0.0.1:7245/ingest/e125f67d-0d35-4628-8289-9bccdd005a3c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AssetTable.tsx:240',message:'Rendering thumbnail img',data:{thumbnail_url:asset.thumbnail_url,asset_name:asset.asset.name},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{}),
+                                // #endregion
                                 <img
                                   src={asset.thumbnail_url}
                                   alt={asset.asset.name}
